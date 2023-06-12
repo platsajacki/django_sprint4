@@ -1,15 +1,20 @@
 from django.shortcuts import get_object_or_404, get_list_or_404
-from django.views.generic import ListView, DetailView
-from blog.models import Post, Category
+from django.views.generic import ListView, DetailView, CreateView
+from django.contrib.auth.mixins import LoginRequiredMixin
+from .models import Post, Category, Profile
+from .forms import PostForm
 
 
 class PostMixin:
     model = Post
 
 
-class IndexListView(PostMixin, ListView):
-    queryset = Post.published.all()
+class PaginatorMixin:
     paginate_by = 10
+
+
+class IndexListView(PostMixin, PaginatorMixin, ListView):
+    queryset = Post.published.all()
 
 
 class PostDetailView(PostMixin, DetailView):
@@ -19,6 +24,10 @@ class PostDetailView(PostMixin, DetailView):
             pk=kwargs['pk']
         )
         return super().dispatch(request, *args, **kwargs)
+
+
+class PostCreateView(LoginRequiredMixin, PostMixin, CreateView):
+    form_class = PostForm
 
 
 class CategoryListView(ListView):
@@ -42,3 +51,11 @@ class CategoryListView(ListView):
         context['post_list'] = self.post_list
         context['category'] = self.category
         return context
+
+
+class ProfileMixin:
+    model = Profile
+
+
+class ProfileListView(ProfileMixin, PaginatorMixin, ListView):
+    pass

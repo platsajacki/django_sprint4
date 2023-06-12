@@ -69,3 +69,26 @@ class Post(PublishedModel):
         ordering = ('-pub_date',)
         verbose_name = 'публикация'
         verbose_name_plural = 'Публикации'
+
+
+class Profile(models.Model):
+    image = models.ImageField(
+        verbose_name='Фото',
+        null=True, blank=True,
+        upload_to='profile'
+    )
+    author = models.OneToOneField(
+        User, verbose_name='Блоггер',
+        on_delete=models.CASCADE
+    )
+    bio = models.TextField(
+        verbose_name='Биография',
+        null=True, blank=True
+    )
+
+    class Meta:
+        verbose_name = 'профиль'
+        verbose_name_plural = 'Профиль'
+
+    def __str__(self):
+        return str(self.author)
