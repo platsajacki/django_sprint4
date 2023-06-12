@@ -1,35 +1,12 @@
 from django.db import models
-from django.utils import timezone as tz
-from django.contrib.auth import get_user_model
+from .managers import PostManager
+from users.models import User
 from core.models import PublishedModel
 
 SLUG_HELP_TXT = ('Идентификатор страницы для URL; разрешены символы латиницы, '
                  'цифры, дефис и подчёркивание.')
 PUB_DATE_HELP_TXT = ('Если установить дату и время в будущем — '
                      'можно делать отложенные публикации.')
-
-User = get_user_model()
-
-
-class PostQuerySet(models.QuerySet):
-    def published(self):
-        return self.filter(
-            is_published=True,
-            pub_date__lt=tz.now(),
-            category__is_published=True
-        )
-
-    def related_table(self):
-        return self.select_related('author', 'location', 'category')
-
-
-class PostManager(models.Manager):
-    def get_queryset(self):
-        return (
-            PostQuerySet(self.model)
-            .related_table()
-            .published()
-        )
 
 
 class Category(PublishedModel):
