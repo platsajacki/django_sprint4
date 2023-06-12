@@ -1,4 +1,5 @@
 from django.db import models
+from django.urls import reverse
 from .managers import PostManager
 from users.models import User
 from core.models import PublishedModel
@@ -42,6 +43,11 @@ class Post(PublishedModel):
         max_length=256,
         verbose_name='Заголовок'
     )
+    image = models.ImageField(
+        verbose_name='Фото',
+        null=True, blank=True,
+        upload_to='post'
+    )
     text = models.TextField(verbose_name='Текст')
     pub_date = models.DateTimeField(
         verbose_name='Дата и время публикации',
@@ -70,6 +76,9 @@ class Post(PublishedModel):
         verbose_name = 'публикация'
         verbose_name_plural = 'Публикации'
 
+    def get_absolute_url(self):
+        return reverse('blog:post_detail', kwargs={'pk': self.pk})
+
 
 class Profile(models.Model):
     image = models.ImageField(
@@ -91,4 +100,4 @@ class Profile(models.Model):
         verbose_name_plural = 'Профиль'
 
     def __str__(self):
-        return str(self.author)
+        return str(self.author.username)
