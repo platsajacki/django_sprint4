@@ -18,8 +18,8 @@
     </ul>
   </small>
   <br>
-  <h3 class="mb-5 text-center">{% if post_list %}Публикации пользователя{% else %}Публикаций пока нет{% endif %}</h3>
-  {% for post in post_list %}
+  <h3 class="mb-5 text-center">{% if page_obj %}Публикации пользователя{% else %}Публикаций пока нет{% endif %}</h3>
+  {% for post in page_obj %}
     <article class="mb-5">
       {% include "includes/post_card.html" %}
     </article>
