@@ -1,9 +1,9 @@
-from django.shortcuts import get_object_or_404, get_list_or_404
+from django.shortcuts import get_object_or_404, get_list_or_404, reverse
 from django.core.paginator import Paginator, EmptyPage
 from django.views.generic import ListView, DetailView, CreateView, UpdateView
 from django.contrib.auth.mixins import LoginRequiredMixin
-from .models import Post, Category, Profile
-from .forms import PostForm
+from .models import Post, Category
+from .forms import PostForm, ProfileForm
 from users.models import User
 from constants import POST_PER_PAGE
 
@@ -69,12 +69,9 @@ class CategoryListView(ListView, PaginatorMixin):
         return self.setup_pagination(context)
 
 
-class ProfileMixin:
-    model = Profile
+class ProfileListView(LoginRequiredMixin, ListView, PaginatorMixin):
+    model = User
 
-
-class ProfileListView(LoginRequiredMixin, ProfileMixin,
-                      ListView, PaginatorMixin):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         username = self.kwargs['username']
@@ -86,5 +83,15 @@ class ProfileListView(LoginRequiredMixin, ProfileMixin,
         return self.setup_pagination(context)
 
 
-class ProfileUpdateView(LoginRequiredMixin, ProfileMixin, UpdateView):
-    pass
+class ProfileUpdateView(LoginRequiredMixin, UpdateView):
+    model = User
+    form_class = ProfileForm
+    slug_field = 'username'
+    slug_url_kwarg = 'username'
+
+    def get_success_url(self):
+        print(self.kwargs['username'])
+        return reverse(
+            'blog:profile',
+            kwargs={'username': self.kwargs['username']}
+        )

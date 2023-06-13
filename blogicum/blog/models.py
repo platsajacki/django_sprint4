@@ -74,26 +74,3 @@ class Post(PublishedModel):
 
     def get_absolute_url(self):
         return reverse('blog:post_detail', kwargs={'pk': self.pk})
-
-
-class Profile(models.Model):
-    image = models.ImageField(
-        verbose_name='Фото',
-        null=True, blank=True,
-        upload_to='profile'
-    )
-    author = models.OneToOneField(
-        User, verbose_name='Блоггер',
-        on_delete=models.CASCADE
-    )
-    bio = models.TextField(
-        verbose_name='Биография',
-        null=True, blank=True
-    )
-
-    class Meta:
-        verbose_name = 'профиль'
-        verbose_name_plural = 'Профиль'
-
-    def __str__(self):
-        return self.author.first_name
