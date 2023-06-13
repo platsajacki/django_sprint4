@@ -1,13 +1,9 @@
 from django.db import models
 from django.urls import reverse
+from constants import SLUG_HELP_TXT, PUB_DATE_HELP_TXT
 from .managers import PostManager
 from users.models import User
 from core.models import PublishedModel
-
-SLUG_HELP_TXT = ('Идентификатор страницы для URL; разрешены символы латиницы, '
-                 'цифры, дефис и подчёркивание.')
-PUB_DATE_HELP_TXT = ('Если установить дату и время в будущем — '
-                     'можно делать отложенные публикации.')
 
 
 class Category(PublishedModel):
@@ -100,4 +96,4 @@ class Profile(models.Model):
         verbose_name_plural = 'Профиль'
 
     def __str__(self):
-        return str(self.author.username)
+        return self.author.first_name

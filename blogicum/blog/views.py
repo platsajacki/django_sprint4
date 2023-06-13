@@ -2,18 +2,31 @@ from django.shortcuts import get_object_or_404, get_list_or_404
 from django.core.paginator import Paginator, EmptyPage
 from django.views.generic import ListView, DetailView, CreateView, UpdateView
 from django.contrib.auth.mixins import LoginRequiredMixin
-from users.models import User
 from .models import Post, Category, Profile
 from .forms import PostForm
+from users.models import User
+from constants import POST_PER_PAGE
 
 
 class PostMixin:
     model = Post
 
 
+class PaginatorMixin:
+    def setup_pagination(self, context, per_page=POST_PER_PAGE):
+        paginator = Paginator(context['post_list'], per_page)
+        page_number = self.request.GET.get('page')
+        try:
+            page_obj = paginator.get_page(page_number)
+        except EmptyPage:
+            page_obj = paginator.get_page(1)
+        context['page_obj'] = page_obj
+        return context
+
+
 class IndexListView(PostMixin, ListView):
     queryset = Post.published.all()
-    paginate_by = 10
+    paginate_by = POST_PER_PAGE
 
 
 class PostDetailView(PostMixin, DetailView):
@@ -33,7 +46,7 @@ class PostCreateView(LoginRequiredMixin, PostMixin, CreateView):
         return super().form_valid(form)
 
 
-class CategoryListView(ListView):
+class CategoryListView(ListView, PaginatorMixin):
     model = Category
 
     def dispatch(self, request, *args, **kwargs):
@@ -53,21 +66,15 @@ class CategoryListView(ListView):
         context = super().get_context_data(**kwargs)
         context['post_list'] = self.post_list
         context['category'] = self.category
-        paginator = Paginator(context['post_list'], 10)
-        page_number = self.request.GET.get('page')
-        try:
-            page_obj = paginator.get_page(page_number)
-        except EmptyPage:
-            page_obj = paginator.get_page(1)
-        context['page_obj'] = page_obj
-        return context
+        return self.setup_pagination(context)
 
 
 class ProfileMixin:
     model = Profile
 
 
-class ProfileListView(LoginRequiredMixin, ProfileMixin, ListView):
+class ProfileListView(LoginRequiredMixin, ProfileMixin,
+                      ListView, PaginatorMixin):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         username = self.kwargs['username']
@@ -76,14 +83,7 @@ class ProfileListView(LoginRequiredMixin, ProfileMixin, ListView):
             Post.published
             .filter(author_id__username=username).all()
         )
-        paginator = Paginator(context['post_list'], 10)
-        page_number = self.request.GET.get('page')
-        try:
-            page_obj = paginator.get_page(page_number)
-        except EmptyPage:
-            page_obj = paginator.get_page(1)
-        context['page_obj'] = page_obj
-        return context
+        return self.setup_pagination(context)
 
 
 class ProfileUpdateView(LoginRequiredMixin, ProfileMixin, UpdateView):
