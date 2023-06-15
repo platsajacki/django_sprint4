@@ -19,9 +19,19 @@ class PostManager(models.Manager):
     def get_queryset(self):
         return (
             PostQuerySet(self.model)
+            .annotate(comment_count=Count('comment'))
             .related_table()
             .published()
-            .annotate(comment_count=Count('comment'))
+            .order_by('-pub_date')
+        )
+
+    def un_published(self):
+        return (
+            PostQuerySet(self.model)
+            .filter(
+                is_published=True,
+                pub_date__lt=tz.now()
+            ).related_table()
         )
 
 

@@ -80,7 +80,7 @@ class ProfileListView(LoginRequiredMixin, ProfileMixin,
             username=username
         )
         context['post_list'] = (
-            Post.published
+            Post.published.un_published()
             .filter(author_id__username=username).all()
         )
         return self.setup_pagination(context)

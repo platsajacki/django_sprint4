@@ -1,10 +1,30 @@
 from django.contrib import admin
 
-from .models import Post, Category, Location
+from .models import Post, Category, Location, Comment
+
+
+@admin.register(Comment)
+class CommentAdmin(admin.ModelAdmin):
+    list_display = (
+        'text',
+        'is_published',
+        'created_at',
+    )
+    list_editable = (
+        'is_published',
+    )
+
+
+class CommentInline(admin.StackedInline):
+    model = Comment
+    extra = 0
 
 
 @admin.register(Post)
 class PostAdmin(admin.ModelAdmin):
+    inlines = (
+        CommentInline,
+    )
     list_display = (
         'title',
         'author',
