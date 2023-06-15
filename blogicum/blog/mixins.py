@@ -64,7 +64,7 @@ class PostDispatchMixin:
 class CommentDispatchMixin:
     def dispatch(self, request, *args, **kwargs):
         instance = get_object_or_404(
-            Comment,
+            Comment.published,
             pk=kwargs['pk']
         )
         if instance.author != request.user:

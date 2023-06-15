@@ -1,5 +1,6 @@
 from django.db import models
 from django.utils import timezone as tz
+from django.db.models import Count
 
 
 class PostQuerySet(models.QuerySet):
@@ -20,6 +21,7 @@ class PostManager(models.Manager):
             PostQuerySet(self.model)
             .related_table()
             .published()
+            .annotate(comment_count=Count('comment'))
         )
 
 

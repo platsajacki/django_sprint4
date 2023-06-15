@@ -75,15 +75,15 @@ class ProfileListView(LoginRequiredMixin, ProfileMixin,
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         username = self.kwargs['username']
-        context['profile'] = get_object_or_404(User.objects, username=username)
+        context['profile'] = get_object_or_404(
+            User.objects,
+            username=username
+        )
         context['post_list'] = (
             Post.published
             .filter(author_id__username=username).all()
         )
         return self.setup_pagination(context)
-
-    def __str__(self):
-        return self.user
 
 
 class ProfileUpdateView(LoginRequiredMixin, ProfileMixin, UpdateView):
@@ -115,6 +115,7 @@ class CommentUpdateView(LoginRequiredMixin, CommentDispatchMixin,
     ...
 
 
-class CommentDeleteView(LoginRequiredMixin, CommentDispatchMixin,
-                        CommentObjectMixin, CommentMixin, DeleteView):
+class CommentDeleteView(LoginRequiredMixin, CommentObjectMixin,
+                        CommentMixin, CommentDispatchMixin, DeleteView):
     template_name = 'blog/comment_form.html'
+    pk_url_kwarg = 'id'
