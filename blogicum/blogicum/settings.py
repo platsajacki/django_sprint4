@@ -32,7 +32,7 @@ ALLOWED_HOSTS = [
 
 LOGIN_REDIRECT_URL = 'blog:index'
 
-CSRF_FAILURE_VIEW = 'core.views.csrf_failure'
+CSRF_FAILURE_VIEW = 'pages.views.csrf_failure'
 
 TEMPLATES_DIR = BASE_DIR / 'templates'
 STATIC_DIR = BASE_DIR / 'static'

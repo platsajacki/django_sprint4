@@ -1,7 +1,7 @@
 from django.db import models
 from django.urls import reverse
 from constants import SLUG_HELP_TXT, PUB_DATE_HELP_TXT
-from .managers import PostManager
+from .managers import PostManager, CommentManager
 from users.models import User
 from core.models import PublishedModel
 
@@ -74,3 +74,32 @@ class Post(PublishedModel):
 
     def get_absolute_url(self):
         return reverse('blog:post_detail', kwargs={'pk': self.pk})
+
+
+class Comment(PublishedModel):
+    text = models.TextField(
+        max_length=512,
+        verbose_name='Текст'
+    )
+    author = models.ForeignKey(
+        User, on_delete=models.CASCADE,
+        verbose_name='Автор комментария'
+    )
+    post = models.ForeignKey(
+        Post, on_delete=models.CASCADE,
+        verbose_name='Пост'
+    )
+
+    objects = models.Manager()
+    published = CommentManager()
+
+    class Meta:
+        ordering = ('created_at',)
+        verbose_name = 'комментарий'
+        verbose_name_plural = 'Комментарий'
+
+    def get_success_url(self):
+        return reverse('blog:post_detail', kwargs={"pk": self.pk})
+
+    def __str__(self):
+        return f'Комментарий {self.author} к посту "{self.post}".'

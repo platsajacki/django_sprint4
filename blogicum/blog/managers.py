@@ -21,3 +21,20 @@ class PostManager(models.Manager):
             .related_table()
             .published()
         )
+
+
+class CommentQuerySet(models.QuerySet):
+    def published(self):
+        return self.filter(is_published=True)
+
+    def related_table(self):
+        return self.select_related('author', 'post')
+
+
+class CommentManager(models.Manager):
+    def get_queryset(self):
+        return (
+            CommentQuerySet(self.model)
+            .related_table()
+            .published()
+        )

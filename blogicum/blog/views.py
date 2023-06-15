@@ -1,14 +1,13 @@
-from django.shortcuts import (
-    get_object_or_404, get_list_or_404, reverse, redirect
-)
+from django.shortcuts import get_object_or_404, get_list_or_404
+from django.urls import reverse_lazy, reverse
 from django.core.paginator import Paginator, EmptyPage
 from django.core.exceptions import PermissionDenied
 from django.views.generic import (
     ListView, DetailView, CreateView, UpdateView, DeleteView
 )
 from django.contrib.auth.mixins import LoginRequiredMixin
-from .models import Post, Category
-from .forms import PostForm, ProfileForm
+from .models import Post, Category, Comment
+from .forms import PostForm, ProfileForm, CommentForm
 from users.models import User
 from constants import POST_PER_PAGE
 
@@ -25,16 +24,23 @@ class ProfileMixin:
     model = User
 
 
-class ValidMixin:
-    def form_valid(self, form):
-        form.instance.author = self.request.user
-        return super().form_valid(form)
-
-
 class PostDispatchMixin:
+    template_name = 'blog/comment_form.html'
+
     def dispatch(self, request, *args, **kwargs):
         instance = get_object_or_404(
-            Post.published.all(),
+            Post.published,
+            pk=kwargs['pk']
+        )
+        if instance.author != request.user:
+            raise PermissionDenied
+        return super().dispatch(request, *args, **kwargs)
+
+
+class CommentDispatchMixin:
+    def dispatch(self, request, *args, **kwargs):
+        instance = get_object_or_404(
+            Comment,
             pk=kwargs['pk']
         )
         if instance.author != request.user:
@@ -62,7 +68,7 @@ class IndexListView(PostMixin, ListView):
 class PostDetailView(PostMixin, DetailView):
     def dispatch(self, request, *args, **kwargs):
         get_object_or_404(
-            Post.published.all(),
+            Post.published,
             pk=kwargs['pk']
         )
         return super().dispatch(request, *args, **kwargs)
@@ -70,22 +76,20 @@ class PostDetailView(PostMixin, DetailView):
 
 class PostCreateView(LoginRequiredMixin, PostFormMixin,
                      PostMixin, CreateView):
-
-    def get_success_url(self):
-        return redirect(
-            'blog:profile',
-            kwargs={'username': self.request.user}
-        )
+    def form_valid(self, form):
+        form.instance.author = self.request.user
+        return super().form_valid(form)
 
 
-class PostUpdateView(LoginRequiredMixin, ValidMixin, PostFormMixin,
+class PostUpdateView(LoginRequiredMixin, PostFormMixin,
                      PostMixin, UpdateView, PostDispatchMixin):
     pass
 
 
-class PostDeleteView(LoginRequiredMixin, PostMixin,
-                     ValidMixin, DeleteView, PostDispatchMixin):
-    pass
+class PostDeleteView(LoginRequiredMixin, PostDispatchMixin,
+                     PostMixin, DeleteView):
+    template_name = 'blog/post_form.html'
+    success_url = reverse_lazy('blog:index')
 
 
 class CategoryListView(ListView, PaginatorMixin):
@@ -93,7 +97,7 @@ class CategoryListView(ListView, PaginatorMixin):
 
     def dispatch(self, request, *args, **kwargs):
         self.post_list = get_list_or_404(
-            Post.published.all(),
+            Post.published,
             category__slug=kwargs['category_slug']
         )
         self.category = get_object_or_404(
@@ -111,7 +115,7 @@ class CategoryListView(ListView, PaginatorMixin):
         return self.setup_pagination(context)
 
 
-class ProfileListView(ProfileMixin, LoginRequiredMixin,
+class ProfileListView(LoginRequiredMixin, ProfileMixin,
                       ListView, PaginatorMixin):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -124,7 +128,7 @@ class ProfileListView(ProfileMixin, LoginRequiredMixin,
         return self.setup_pagination(context)
 
 
-class ProfileUpdateView(ProfileMixin, LoginRequiredMixin, UpdateView):
+class ProfileUpdateView(LoginRequiredMixin, ProfileMixin, UpdateView):
     form_class = ProfileForm
     slug_field = 'username'
     slug_url_kwarg = 'username'
