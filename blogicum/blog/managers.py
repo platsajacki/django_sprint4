@@ -28,7 +28,9 @@ class CommentQuerySet(models.QuerySet):
         return self.filter(is_published=True)
 
     def related_table(self):
-        return self.select_related('author', 'post')
+        return (
+            self.select_related('author', 'post')
+        )
 
 
 class CommentManager(models.Manager):
