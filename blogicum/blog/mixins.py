@@ -30,7 +30,6 @@ class CommentMixin:
 
 
 class CommentObjectMixin:
-    pk_url_kwarg = 'id'
 
     def get_object(self):
         queryset = self.queryset.filter(pk=self.kwargs['id'])
@@ -62,10 +61,13 @@ class PostDispatchMixin:
 
 
 class CommentDispatchMixin:
+    pk_url_kwarg = 'id'
+
     def dispatch(self, request, *args, **kwargs):
+        print(self.kwargs)
         instance = get_object_or_404(
             Comment.published,
-            pk=kwargs['pk']
+            pk=kwargs['id']
         )
         if instance.author != request.user:
             raise PermissionDenied

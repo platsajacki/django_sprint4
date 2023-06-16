@@ -65,7 +65,7 @@ class Post(PublishedModel):
     )
 
     objects = models.Manager()
-    published = PostManager()
+    posts = PostManager()
 
     class Meta:
         ordering = ('-pub_date',)

@@ -16,14 +16,14 @@ from .mixins import (
 
 
 class IndexListView(PostMixin, ListView):
-    queryset = Post.published.all()
+    queryset = Post.posts.published()
     paginate_by = POST_PER_PAGE
 
 
 class PostDetailView(PostMixin, CommentDataMixin, DetailView):
     def dispatch(self, request, *args, **kwargs):
         get_object_or_404(
-            Post.published,
+            Post.posts.published(),
             pk=kwargs['pk']
         )
         return super().dispatch(request, *args, **kwargs)
@@ -52,7 +52,7 @@ class CategoryListView(ListView, PaginatorMixin):
 
     def dispatch(self, request, *args, **kwargs):
         self.post_list = get_list_or_404(
-            Post.published,
+            Post.posts.published(),
             category__slug=kwargs['category_slug']
         )
         self.category = get_object_or_404(
@@ -80,7 +80,7 @@ class ProfileListView(LoginRequiredMixin, ProfileMixin,
             username=username
         )
         context['post_list'] = (
-            Post.published.un_published()
+            Post.posts.all_posts()
             .filter(author_id__username=username).all()
         )
         return self.setup_pagination(context)
@@ -105,17 +105,16 @@ class CommentCreateView(LoginRequiredMixin, CommentMixin, CreateView):
             get_object_or_404(User, username=self.request.user)
         )
         form.instance.post = (
-            get_object_or_404(Post.published, pk=self.kwargs['pk'])
+            get_object_or_404(Post.posts.all_posts(), pk=self.kwargs['pk'])
         )
         return super().form_valid(form)
 
 
-class CommentUpdateView(LoginRequiredMixin, CommentDispatchMixin,
-                        CommentObjectMixin, CommentMixin, UpdateView):
+class CommentUpdateView(LoginRequiredMixin, CommentObjectMixin,
+                        CommentDispatchMixin, CommentMixin, UpdateView):
     ...
 
 
-class CommentDeleteView(LoginRequiredMixin, CommentObjectMixin,
-                        CommentMixin, CommentDispatchMixin, DeleteView):
+class CommentDeleteView(LoginRequiredMixin, CommentDispatchMixin,
+                        CommentObjectMixin, CommentMixin, DeleteView):
     template_name = 'blog/comment_form.html'
-    pk_url_kwarg = 'id'

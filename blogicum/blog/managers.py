@@ -17,22 +17,19 @@ class PostQuerySet(models.QuerySet):
 
 class PostManager(models.Manager):
     def get_queryset(self):
+        return PostQuerySet(self.model)
+
+    def published(self):
         return (
-            PostQuerySet(self.model)
+            self.get_queryset()
             .annotate(comment_count=Count('comment'))
             .related_table()
             .published()
             .order_by('-pub_date')
         )
 
-    def un_published(self):
-        return (
-            PostQuerySet(self.model)
-            .filter(
-                is_published=True,
-                pub_date__lt=tz.now()
-            ).related_table()
-        )
+    def all_posts(self):
+        return PostQuerySet(self.model).related_table()
 
 
 class CommentQuerySet(models.QuerySet):
