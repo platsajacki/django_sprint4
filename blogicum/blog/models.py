@@ -1,9 +1,10 @@
 from django.db import models
-from django.urls import reverse
+from django.contrib.auth import get_user_model
 from constants import SLUG_HELP_TXT, PUB_DATE_HELP_TXT
 from .managers import PostManager, CommentManager
-from users.models import User
 from core.models import PublishedModel
+
+User = get_user_model()
 
 
 class Category(PublishedModel):
@@ -71,9 +72,6 @@ class Post(PublishedModel):
         ordering = ('-pub_date',)
         verbose_name = 'публикация'
         verbose_name_plural = 'Публикации'
-
-    def get_absolute_url(self):
-        return reverse('blog:post_detail', kwargs={'pk': self.pk})
 
 
 class Comment(PublishedModel):

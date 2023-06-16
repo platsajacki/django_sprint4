@@ -11,6 +11,9 @@ class PostQuerySet(models.QuerySet):
             category__is_published=True
         )
 
+    def count_comment(self):
+        return self.annotate(comment_count=Count('comment'))
+
     def related_table(self):
         return self.select_related('author', 'location', 'category')
 
@@ -22,14 +25,19 @@ class PostManager(models.Manager):
     def published(self):
         return (
             self.get_queryset()
-            .annotate(comment_count=Count('comment'))
+            .count_comment()
             .related_table()
             .published()
             .order_by('-pub_date')
         )
 
     def all_posts(self):
-        return PostQuerySet(self.model).related_table()
+        return (
+            PostQuerySet(self.model)
+            .related_table()
+            .count_comment()
+            .order_by('-pub_date')
+        )
 
 
 class CommentQuerySet(models.QuerySet):

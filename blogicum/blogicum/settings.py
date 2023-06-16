@@ -54,7 +54,6 @@ INSTALLED_APPS = [
     'blog',
     'pages',
     'core',
-    'users',
     'django_bootstrap5',
     'debug_toolbar',
 ]

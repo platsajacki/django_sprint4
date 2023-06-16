@@ -3,15 +3,14 @@ from django.urls import reverse_lazy, reverse
 from django.views.generic import (
     ListView, DetailView, CreateView, UpdateView, DeleteView
 )
-from .models import Post, Category
+from .models import Post, Category, User
 from .forms import ProfileForm
-from users.models import User
 from constants import POST_PER_PAGE
 from django.contrib.auth.mixins import LoginRequiredMixin
 from .mixins import (
     PostMixin, CommentDataMixin, PostFormMixin, PostDispatchMixin,
     PaginatorMixin, ProfileMixin, CommentMixin, CommentObjectMixin,
-    CommentDispatchMixin
+    CommentDispatchMixin, PostUrlMixin
 )
 
 
@@ -30,14 +29,14 @@ class PostDetailView(PostMixin, CommentDataMixin, DetailView):
 
 
 class PostCreateView(LoginRequiredMixin, PostFormMixin,
-                     PostMixin, CreateView):
+                     PostMixin, PostUrlMixin, CreateView):
     def form_valid(self, form):
         form.instance.author = self.request.user
         return super().form_valid(form)
 
 
-class PostUpdateView(LoginRequiredMixin, PostFormMixin,
-                     PostMixin, UpdateView, PostDispatchMixin):
+class PostUpdateView(LoginRequiredMixin, PostFormMixin, PostMixin,
+                     PostUrlMixin, UpdateView, PostDispatchMixin):
     ...
 
 
@@ -99,7 +98,6 @@ class ProfileUpdateView(LoginRequiredMixin, ProfileMixin, UpdateView):
 
 
 class CommentCreateView(LoginRequiredMixin, CommentMixin, CreateView):
-
     def form_valid(self, form):
         form.instance.author = (
             get_object_or_404(User, username=self.request.user)
