@@ -1,4 +1,4 @@
-from django.shortcuts import get_object_or_404, get_list_or_404, redirect
+from django.shortcuts import get_object_or_404
 from django.urls import reverse_lazy, reverse
 from django.utils import timezone as tz
 from django.core.exceptions import PermissionDenied
@@ -31,8 +31,7 @@ class PostDetailView(PostMixin, CommentDataMixin, DetailView):
             return super().dispatch(request, *args, **kwargs)
         elif instance.is_published:
             return super().dispatch(request, *args, **kwargs)
-        else:
-            raise PermissionDenied
+        raise PermissionDenied
 
 
 class PostCreateView(LoginRequiredMixin, PostFormMixin,
@@ -42,19 +41,12 @@ class PostCreateView(LoginRequiredMixin, PostFormMixin,
         return super().form_valid(form)
 
 
-class PostUpdateView(LoginRequiredMixin, PostFormMixin, PostMixin,
-                     PostUrlMixin, UpdateView):
-    def dispatch(self, request, *args, **kwargs):
-        instance = get_object_or_404(
-            Post.posts.all_posts(),
-            pk=kwargs['pk']
-        )
-        if instance.author != request.user:
-            return redirect('blog:post_detail', self.kwargs['pk'])
-        return super().dispatch(request, *args, **kwargs)
+class PostUpdateView(PostDispatchMixin, LoginRequiredMixin,
+                     PostFormMixin, PostMixin, PostUrlMixin, UpdateView):
+    ...
 
 
-class PostDeleteView(LoginRequiredMixin, PostDispatchMixin,
+class PostDeleteView(PostDispatchMixin, LoginRequiredMixin,
                      PostMixin, DeleteView):
     success_url = reverse_lazy('blog:index')
 
@@ -63,9 +55,9 @@ class CategoryListView(ListView, PaginatorMixin):
     model = Category
 
     def dispatch(self, request, *args, **kwargs):
-        self.post_list = get_list_or_404(
-            Post.posts.published(),
-            category__slug=kwargs['category_slug']
+        self.post_list = (
+            Post.posts.published()
+            .filter(category__slug=kwargs['category_slug'])
         )
         self.category = get_object_or_404(
             Category.objects

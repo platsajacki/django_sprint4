@@ -1,6 +1,6 @@
 from django.core.paginator import Paginator, EmptyPage
 from django.core.exceptions import PermissionDenied
-from django.shortcuts import get_object_or_404
+from django.shortcuts import get_object_or_404, redirect
 from django.urls import reverse
 from .models import Post, Comment, User
 from .forms import PostForm, CommentForm
@@ -60,7 +60,7 @@ class PostDispatchMixin:
             pk=kwargs['pk']
         )
         if instance.author != request.user:
-            raise PermissionDenied
+            return redirect('blog:post_detail', self.kwargs['pk'])
         return super().dispatch(request, *args, **kwargs)
 
 

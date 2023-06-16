@@ -42,7 +42,7 @@ class Post(PublishedModel):
     )
     image = models.ImageField(
         verbose_name='Фото',
-        null=True, blank=True,
+        blank=True,
         upload_to='post'
     )
     text = models.TextField(verbose_name='Текст')
