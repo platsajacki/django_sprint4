@@ -37,7 +37,6 @@ class CommentMixin:
 
 
 class CommentObjectMixin:
-
     def get_object(self):
         queryset = self.queryset.filter(pk=self.kwargs['id'])
         return super().get_object(queryset=queryset)
@@ -55,8 +54,6 @@ class CommentDataMixin:
 
 
 class PostDispatchMixin:
-    template_name = 'blog/comment_form.html'
-
     def dispatch(self, request, *args, **kwargs):
         instance = get_object_or_404(
             Post.posts.all_posts(),

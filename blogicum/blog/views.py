@@ -1,5 +1,7 @@
-from django.shortcuts import get_object_or_404, get_list_or_404
+from django.shortcuts import get_object_or_404, get_list_or_404, redirect
 from django.urls import reverse_lazy, reverse
+from django.utils import timezone as tz
+from django.core.exceptions import PermissionDenied
 from django.views.generic import (
     ListView, DetailView, CreateView, UpdateView, DeleteView
 )
@@ -21,11 +23,16 @@ class IndexListView(PostMixin, ListView):
 
 class PostDetailView(PostMixin, CommentDataMixin, DetailView):
     def dispatch(self, request, *args, **kwargs):
-        get_object_or_404(
-            Post.posts.published(),
+        instance = get_object_or_404(
+            Post.posts.all(),
             pk=kwargs['pk']
         )
-        return super().dispatch(request, *args, **kwargs)
+        if instance.author == self.request.user:
+            return super().dispatch(request, *args, **kwargs)
+        elif instance.is_published:
+            return super().dispatch(request, *args, **kwargs)
+        else:
+            raise PermissionDenied
 
 
 class PostCreateView(LoginRequiredMixin, PostFormMixin,
@@ -36,13 +43,19 @@ class PostCreateView(LoginRequiredMixin, PostFormMixin,
 
 
 class PostUpdateView(LoginRequiredMixin, PostFormMixin, PostMixin,
-                     PostUrlMixin, UpdateView, PostDispatchMixin):
-    ...
+                     PostUrlMixin, UpdateView):
+    def dispatch(self, request, *args, **kwargs):
+        instance = get_object_or_404(
+            Post.posts.all_posts(),
+            pk=kwargs['pk']
+        )
+        if instance.author != request.user:
+            return redirect('blog:post_detail', self.kwargs['pk'])
+        return super().dispatch(request, *args, **kwargs)
 
 
 class PostDeleteView(LoginRequiredMixin, PostDispatchMixin,
                      PostMixin, DeleteView):
-    template_name = 'blog/post_form.html'
     success_url = reverse_lazy('blog:index')
 
 
@@ -69,8 +82,7 @@ class CategoryListView(ListView, PaginatorMixin):
         return self.setup_pagination(context)
 
 
-class ProfileListView(LoginRequiredMixin, ProfileMixin,
-                      ListView, PaginatorMixin):
+class ProfileListView(ProfileMixin, ListView, PaginatorMixin):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         username = self.kwargs['username']
@@ -78,10 +90,16 @@ class ProfileListView(LoginRequiredMixin, ProfileMixin,
             User.objects,
             username=username
         )
-        context['post_list'] = (
+        post_list = (
             Post.posts.all_posts()
             .filter(author_id__username=username).all()
         )
+        if str(self.request.user) != username:
+            context['post_list'] = (
+                post_list.filter(pub_date__lt=tz.now())
+            )
+            return self.setup_pagination(context)
+        context['post_list'] = post_list
         return self.setup_pagination(context)
 
 
