@@ -1,14 +1,11 @@
-from django.core.paginator import Paginator, EmptyPage
 from django.core.exceptions import PermissionDenied
+from django.core.paginator import EmptyPage, Paginator
 from django.shortcuts import get_object_or_404, redirect
 from django.urls import reverse
-from .models import Post, Comment, User
-from .forms import PostForm, CommentForm
+
+from .forms import CommentForm
+from .models import Comment, Post
 from constants import POST_PER_PAGE
-
-
-class PostMixin:
-    model = Post
 
 
 class PostUrlMixin:
@@ -17,14 +14,6 @@ class PostUrlMixin:
             'blog:profile',
             kwargs={'username': self.request.user}
         )
-
-
-class PostFormMixin:
-    form_class = PostForm
-
-
-class ProfileMixin:
-    model = User
 
 
 class CommentMixin:
@@ -56,7 +45,10 @@ class CommentDataMixin:
 class PostDispatchMixin:
     def dispatch(self, request, *args, **kwargs):
         instance = get_object_or_404(
-            Post.posts.all_posts(),
+            (Post.objects
+             .related_table()
+             .count_comment()
+             .order_by('-pub_date')),
             pk=kwargs['pk']
         )
         if instance.author != request.user:

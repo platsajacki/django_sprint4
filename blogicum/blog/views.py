@@ -1,53 +1,60 @@
-from django.shortcuts import get_object_or_404
-from django.urls import reverse_lazy, reverse
-from django.utils import timezone as tz
-from django.core.exceptions import PermissionDenied
-from django.views.generic import (
-    ListView, DetailView, CreateView, UpdateView, DeleteView
-)
-from .models import Post, Category, User
-from .forms import ProfileForm
-from constants import POST_PER_PAGE
+from django.contrib.auth.forms import UserCreationForm
 from django.contrib.auth.mixins import LoginRequiredMixin
-from .mixins import (
-    PostMixin, CommentDataMixin, PostFormMixin, PostDispatchMixin,
-    PaginatorMixin, ProfileMixin, CommentMixin, CommentObjectMixin,
-    CommentDispatchMixin, PostUrlMixin
+from django.core.exceptions import PermissionDenied
+from django.shortcuts import get_object_or_404
+from django.urls import reverse, reverse_lazy
+from django.utils import timezone as tz
+from django.views.generic import (
+    CreateView, DeleteView, DetailView, ListView, UpdateView
 )
 
+from .forms import PostForm, ProfileForm
+from .mixins import (
+    CommentDataMixin, CommentDispatchMixin, CommentMixin, CommentObjectMixin,
+    PaginatorMixin, PostDispatchMixin, PostUrlMixin
+)
+from .models import Category, Post, User
+from constants import POST_PER_PAGE
 
-class IndexListView(PostMixin, ListView):
-    queryset = Post.posts.published()
+
+class IndexListView(ListView):
+    model = Post
+    queryset = Post.published.all()
     paginate_by = POST_PER_PAGE
 
 
-class PostDetailView(PostMixin, CommentDataMixin, DetailView):
+class PostDetailView(CommentDataMixin, DetailView):
+    model = Post
+
     def dispatch(self, request, *args, **kwargs):
         instance = get_object_or_404(
-            Post.posts.all(),
+            Post.objects.related_table().count_comment().order_by('-pub_date'),
             pk=kwargs['pk']
         )
-        if instance.author == self.request.user:
-            return super().dispatch(request, *args, **kwargs)
-        elif instance.is_published:
+        if (instance.is_published and instance.pub_date < tz.now()
+                or instance.author == self.request.user):
             return super().dispatch(request, *args, **kwargs)
         raise PermissionDenied
 
 
-class PostCreateView(LoginRequiredMixin, PostFormMixin,
-                     PostMixin, PostUrlMixin, CreateView):
+class PostCreateView(LoginRequiredMixin, PostUrlMixin, CreateView):
+    model = Post
+    form_class = PostForm
+
     def form_valid(self, form):
         form.instance.author = self.request.user
         return super().form_valid(form)
 
 
 class PostUpdateView(PostDispatchMixin, LoginRequiredMixin,
-                     PostFormMixin, PostMixin, PostUrlMixin, UpdateView):
-    ...
+                     PostUrlMixin, UpdateView):
+    model = Post
+    form_class = PostForm
 
 
-class PostDeleteView(PostDispatchMixin, LoginRequiredMixin,
-                     PostMixin, DeleteView):
+class PostDeleteView(PostDispatchMixin, LoginRequiredMixin, DeleteView):
+    model = Post
+    template_name = 'blog/post_form.html'
     success_url = reverse_lazy('blog:index')
 
 
@@ -56,7 +63,7 @@ class CategoryListView(ListView, PaginatorMixin):
 
     def dispatch(self, request, *args, **kwargs):
         self.post_list = (
-            Post.posts.published()
+            Post.published.all()
             .filter(category__slug=kwargs['category_slug'])
         )
         self.category = get_object_or_404(
@@ -74,17 +81,28 @@ class CategoryListView(ListView, PaginatorMixin):
         return self.setup_pagination(context)
 
 
-class ProfileListView(ProfileMixin, ListView, PaginatorMixin):
+class ProfileCreateView(CreateView):
+    form_class = UserCreationForm
+    success_url = reverse_lazy('blog:edit_profile')
+
+
+class ProfileListView(ListView, PaginatorMixin):
+    model = User
+
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         username = self.kwargs['username']
-        context['profile'] = get_object_or_404(
-            User.objects,
-            username=username
+        context['profile'] = (
+            self.get_queryset()
+            .get(username=username)
         )
         post_list = (
-            Post.posts.all_posts()
-            .filter(author_id__username=username).all()
+            Post.objects
+            .related_table()
+            .count_comment()
+            .order_by('-pub_date')
+            .filter(author_id__username=username)
+            .all()
         )
         if str(self.request.user) != username:
             context['post_list'] = (
@@ -95,7 +113,8 @@ class ProfileListView(ProfileMixin, ListView, PaginatorMixin):
         return self.setup_pagination(context)
 
 
-class ProfileUpdateView(LoginRequiredMixin, ProfileMixin, UpdateView):
+class ProfileUpdateView(LoginRequiredMixin, UpdateView):
+    model = User
     form_class = ProfileForm
     slug_field = 'username'
     slug_url_kwarg = 'username'
@@ -113,7 +132,12 @@ class CommentCreateView(LoginRequiredMixin, CommentMixin, CreateView):
             get_object_or_404(User, username=self.request.user)
         )
         form.instance.post = (
-            get_object_or_404(Post.posts.all_posts(), pk=self.kwargs['pk'])
+            get_object_or_404(
+                (Post.objects
+                 .related_table()
+                 .count_comment()
+                 .order_by('-pub_date')),
+                pk=self.kwargs['pk'])
         )
         return super().form_valid(form)
 

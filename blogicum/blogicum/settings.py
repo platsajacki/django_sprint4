@@ -51,9 +51,11 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+
     'blog',
     'pages',
     'core',
+
     'django_bootstrap5',
     'debug_toolbar',
 ]

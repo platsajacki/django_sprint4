@@ -1,6 +1,6 @@
 from django.db import models
-from django.utils import timezone as tz
 from django.db.models import Count
+from django.utils import timezone as tz
 
 
 class PostQuerySet(models.QuerySet):
@@ -20,21 +20,10 @@ class PostQuerySet(models.QuerySet):
 
 class PostManager(models.Manager):
     def get_queryset(self):
-        return PostQuerySet(self.model)
-
-    def published(self):
-        return (
-            self.get_queryset()
-            .related_table()
-            .published()
-            .count_comment()
-            .order_by('-pub_date')
-        )
-
-    def all_posts(self):
         return (
             PostQuerySet(self.model)
             .related_table()
+            .published()
             .count_comment()
             .order_by('-pub_date')
         )
@@ -45,9 +34,7 @@ class CommentQuerySet(models.QuerySet):
         return self.filter(is_published=True)
 
     def related_table(self):
-        return (
-            self.select_related('author', 'post')
-        )
+        return self.select_related('author')
 
 
 class CommentManager(models.Manager):

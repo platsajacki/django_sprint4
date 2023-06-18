@@ -1,7 +1,8 @@
-from django.db import models
 from django.contrib.auth import get_user_model
-from constants import SLUG_HELP_TXT, PUB_DATE_HELP_TXT
-from .managers import PostManager, CommentManager
+from django.db import models
+
+from .managers import CommentManager, PostManager, PostQuerySet
+from constants import PUB_DATE_HELP_TXT, SLUG_HELP_TXT
 from core.models import PublishedModel
 
 User = get_user_model()
@@ -65,8 +66,8 @@ class Post(PublishedModel):
         verbose_name='Категория'
     )
 
-    objects = models.Manager()
-    posts = PostManager()
+    objects = PostQuerySet().as_manager()
+    published = PostManager()
 
     class Meta:
         ordering = ('-pub_date',)
