@@ -28,7 +28,7 @@ class PostDetailView(CommentDataMixin, DetailView):
 
     def dispatch(self, request, *args, **kwargs):
         instance = get_object_or_404(
-            Post.objects.related_table().count_comment().order_by('-pub_date'),
+            Post.objects.related_table().count_comment(),
             pk=kwargs['pk']
         )
         if (instance.is_published and instance.pub_date < tz.now()
@@ -104,7 +104,7 @@ class ProfileListView(ListView, PaginatorMixin):
             .filter(author_id__username=username)
             .all()
         )
-        if str(self.request.user) != username:
+        if self.request.user.username != username:
             context['post_list'] = (
                 post_list.filter(pub_date__lt=tz.now())
             )
@@ -135,8 +135,7 @@ class CommentCreateView(LoginRequiredMixin, CommentMixin, CreateView):
             get_object_or_404(
                 (Post.objects
                  .related_table()
-                 .count_comment()
-                 .order_by('-pub_date')),
+                 .count_comment()),
                 pk=self.kwargs['pk'])
         )
         return super().form_valid(form)

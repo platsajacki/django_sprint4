@@ -22,7 +22,7 @@ class CommentMixin:
     queryset = Comment.published
 
     def get_success_url(self):
-        return reverse('blog:post_detail', kwargs={"pk": self.kwargs['pk']})
+        return reverse('blog:post_detail', kwargs={'pk': self.kwargs['pk']})
 
 
 class CommentObjectMixin:
@@ -47,8 +47,7 @@ class PostDispatchMixin:
         instance = get_object_or_404(
             (Post.objects
              .related_table()
-             .count_comment()
-             .order_by('-pub_date')),
+             .count_comment()),
             pk=kwargs['pk']
         )
         if instance.author != request.user:

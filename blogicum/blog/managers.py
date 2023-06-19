@@ -22,7 +22,6 @@ class PostManager(models.Manager):
     def get_queryset(self):
         return (
             PostQuerySet(self.model)
-            .related_table()
             .published()
             .count_comment()
             .order_by('-pub_date')
