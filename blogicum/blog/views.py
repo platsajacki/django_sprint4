@@ -62,15 +62,15 @@ class CategoryListView(ListView, PaginatorMixin):
     model = Category
 
     def dispatch(self, request, *args, **kwargs):
-        self.post_list = (
-            Post.published.all()
-            .filter(category__slug=kwargs['category_slug'])
-        )
         self.category = get_object_or_404(
             Category.objects
             .values('title', 'description'),
             slug=kwargs['category_slug'],
             is_published=True
+        )
+        self.post_list = (
+            Post.published.all()
+            .filter(category__slug=kwargs['category_slug'])
         )
         return super().dispatch(request, *args, **kwargs)
 
