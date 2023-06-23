@@ -83,7 +83,8 @@ class CategoryListView(ListView, PaginatorMixin):
 
 class ProfileCreateView(CreateView):
     form_class = UserCreationForm
-    success_url = reverse_lazy('blog:edit_profile')
+    template_name = 'registration/registration_form.html'
+    success_url = reverse_lazy('login')
 
 
 class ProfileListView(ListView, PaginatorMixin):
