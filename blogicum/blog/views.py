@@ -11,7 +11,7 @@ from django.views.generic import (
 from .forms import PostForm, ProfileForm
 from .mixins import (
     CommentDataMixin, CommentDispatchMixin, CommentMixin, CommentObjectMixin,
-    PaginatorMixin, PostDispatchMixin, PostUrlMixin
+    PaginatorMixin, PostDispatchMixin, ProfileUrlMixin
 )
 from .models import Category, Post, User
 from constants import POST_PER_PAGE
@@ -37,7 +37,7 @@ class PostDetailView(CommentDataMixin, DetailView):
         raise PermissionDenied
 
 
-class PostCreateView(LoginRequiredMixin, PostUrlMixin, CreateView):
+class PostCreateView(LoginRequiredMixin, ProfileUrlMixin, CreateView):
     model = Post
     form_class = PostForm
 
@@ -46,10 +46,16 @@ class PostCreateView(LoginRequiredMixin, PostUrlMixin, CreateView):
         return super().form_valid(form)
 
 
-class PostUpdateView(PostDispatchMixin, LoginRequiredMixin,
-                     PostUrlMixin, UpdateView):
+class PostUpdateView(PostDispatchMixin, LoginRequiredMixin, UpdateView):
     model = Post
     form_class = PostForm
+
+    def get_success_url(self):
+        print(self.kwargs['pk'])
+        return reverse(
+            'blog:post_detail',
+            kwargs={'pk': self.kwargs['pk']}
+        )
 
 
 class PostDeleteView(PostDispatchMixin, LoginRequiredMixin, DeleteView):
@@ -114,17 +120,11 @@ class ProfileListView(ListView, PaginatorMixin):
         return self.setup_pagination(context)
 
 
-class ProfileUpdateView(LoginRequiredMixin, UpdateView):
+class ProfileUpdateView(LoginRequiredMixin, ProfileUrlMixin, UpdateView):
     model = User
     form_class = ProfileForm
     slug_field = 'username'
     slug_url_kwarg = 'username'
-
-    def get_success_url(self):
-        return reverse(
-            'blog:profile',
-            kwargs={'username': self.kwargs['username']}
-        )
 
 
 class CommentCreateView(LoginRequiredMixin, CommentMixin, CreateView):

@@ -8,11 +8,11 @@ from .models import Comment, Post
 from constants import POST_PER_PAGE
 
 
-class PostUrlMixin:
+class ProfileUrlMixin:
     def get_success_url(self):
         return reverse(
             'blog:profile',
-            kwargs={'username': self.request.user}
+            kwargs={'username': self.request.user.username}
         )
 
 
