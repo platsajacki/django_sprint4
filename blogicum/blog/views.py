@@ -51,7 +51,6 @@ class PostUpdateView(PostDispatchMixin, LoginRequiredMixin, UpdateView):
     form_class = PostForm
 
     def get_success_url(self):
-        print(self.kwargs['pk'])
         return reverse(
             'blog:post_detail',
             kwargs={'pk': self.kwargs['pk']}
